@@ -222,7 +222,7 @@ export default function LeadCard({
             </div>
             <div className="flex items-center gap-1 text-[8px] font-bold text-emerald-600 leading-none">
               <Clock size={9} />
-              {isToday(parseISO(nextAppointment.date)) ? 'Today' : format(parseISO(nextAppointment.date), 'MMM d')} @ {nextAppointment.time}
+              {nextAppointment.date && isToday(parseISO(nextAppointment.date)) ? 'Today' : (nextAppointment.date ? format(parseISO(nextAppointment.date), 'MMM d') : 'No Date')} @ {nextAppointment.time}
             </div>
           </div>
           {nextAppointment.notes && (
