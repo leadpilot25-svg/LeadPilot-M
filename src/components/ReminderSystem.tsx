@@ -82,7 +82,7 @@ export function ReminderSystem({ appointments, onFocusLead, enabled = true }: Re
     checkReminders(); // Initial check
 
     return () => clearInterval(interval);
-  }, [appointments, enabled, processedReminders]);
+  }, [appointments, enabled]); // Removed processedReminders to prevent re-trigger cycles
 
   const removeReminder = (id: string) => {
     setActiveReminders(prev => prev.filter(r => r.id !== id));
