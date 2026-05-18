@@ -244,40 +244,66 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
 
     if (appTypeFilter) {
       const idsWithApp = (appointments || [])
-        .filter(a => a && a.type === appTypeFilter && a.date && isToday(parseISO(a.date)))
+        .filter(a => a && a.type === appTypeFilter && a.date && a.date.length > 5 && isToday(parseISO(a.date)))
         .map(a => a.leadId);
       result = result.filter(l => l && idsWithApp.includes(l.id));
       
       // If we are filtering by appointment type, we don't want the tab filters to hide our results
-      return result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      return result.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+      });
     }
 
     switch (activeTab) {
       case 'Dashboard':
-        result = result.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && isToday(parseISO(l.followUpDate)));
-        result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        result = result.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && l.followUpDate.length > 5 && isToday(parseISO(l.followUpDate)));
+        result.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+        });
         break;
       case 'Today':
-        result = result.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && isToday(parseISO(l.followUpDate)));
-        result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        result = result.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && l.followUpDate.length > 5 && isToday(parseISO(l.followUpDate)));
+        result.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+        });
         break;
       case 'Overdue':
-        result = result.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && isPast(parseISO(l.followUpDate)) && !isToday(parseISO(l.followUpDate)));
-        result.sort((a, b) => new Date(a.followUpDate || 0).getTime() - new Date(b.followUpDate || 0).getTime());
+        result = result.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && l.followUpDate.length > 5 && isPast(parseISO(l.followUpDate)) && !isToday(parseISO(l.followUpDate)));
+        result.sort((a, b) => {
+          const dateA = new Date(a.followUpDate || 0).getTime();
+          const dateB = new Date(b.followUpDate || 0).getTime();
+          return (isNaN(dateA) ? 0 : dateA) - (isNaN(dateB) ? 0 : dateB);
+        });
         break;
       case 'Upcoming':
-        result = result.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && isFuture(parseISO(l.followUpDate)));
-        result.sort((a, b) => new Date(a.followUpDate || 0).getTime() - new Date(b.followUpDate || 0).getTime());
+        result = result.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && l.followUpDate.length > 5 && isFuture(parseISO(l.followUpDate)));
+        result.sort((a, b) => {
+          const dateA = new Date(a.followUpDate || 0).getTime();
+          const dateB = new Date(b.followUpDate || 0).getTime();
+          return (isNaN(dateA) ? 0 : dateA) - (isNaN(dateB) ? 0 : dateB);
+        });
         break;
       case 'Done':
         result = result.filter(l => l && l.status === LeadStatus.DONE);
-        result.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+        result.sort((a, b) => {
+          const dateA = new Date(a.updatedAt || 0).getTime();
+          const dateB = new Date(b.updatedAt || 0).getTime();
+          return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+        });
         break;
       case 'All':
         result.sort((a, b) => {
           if (!a || !b) return 0;
           if (a.status !== b.status) return a.status === LeadStatus.ACTIVE ? -1 : 1;
-          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
         });
         break;
     }
@@ -287,22 +313,22 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
 
   const stats = useMemo(() => {
     const list = leadsByAccess || [];
-    const todayApps = (appointments || []).filter(a => a && a.date && isToday(parseISO(a.date)));
+    const todayApps = (appointments || []).filter(a => a && a.date && a.date.length > 5 && isToday(parseISO(a.date)));
     const todayDoneLeads = list.filter(l => l && l.status === LeadStatus.DONE && l.updatedAt && l.updatedAt.length > 5 && isToday(parseISO(l.updatedAt))).length;
     
     // Dynamic counts for activity summary
     const activityCounts: Record<AppointmentType, number> = {
-      [AppointmentType.CALL]: todayApps.filter(a => a.type === AppointmentType.CALL).length,
-      [AppointmentType.SITE_VISIT]: todayApps.filter(a => a.type === AppointmentType.SITE_VISIT).length,
-      [AppointmentType.MEETING]: todayApps.filter(a => a.type === AppointmentType.MEETING).length,
-      [AppointmentType.FOLLOW_UP]: todayApps.filter(a => a.type === AppointmentType.FOLLOW_UP).length,
+      [AppointmentType.CALL]: todayApps.filter(a => a && a.type === AppointmentType.CALL).length,
+      [AppointmentType.SITE_VISIT]: todayApps.filter(a => a && a.type === AppointmentType.SITE_VISIT).length,
+      [AppointmentType.MEETING]: todayApps.filter(a => a && a.type === AppointmentType.MEETING).length,
+      [AppointmentType.FOLLOW_UP]: todayApps.filter(a => a && a.type === AppointmentType.FOLLOW_UP).length,
     };
 
     return {
-      today: list.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && isToday(parseISO(l.followUpDate))).length,
-      overdue: list.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && isPast(parseISO(l.followUpDate)) && !isToday(parseISO(l.followUpDate))).length,
+      today: list.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && l.followUpDate.length > 5 && isToday(parseISO(l.followUpDate))).length,
+      overdue: list.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && l.followUpDate.length > 5 && isPast(parseISO(l.followUpDate)) && !isToday(parseISO(l.followUpDate))).length,
       total: list.length,
-      upcoming: list.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && isFuture(parseISO(l.followUpDate))).length,
+      upcoming: list.filter(l => l && l.status === LeadStatus.ACTIVE && l.followUpDate && l.followUpDate.length > 5 && isFuture(parseISO(l.followUpDate))).length,
       done: list.filter(l => l && l.status === LeadStatus.DONE).length,
       doneToday: todayDoneLeads,
       dailyGoal: 20,
@@ -315,9 +341,13 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
 
   const priorityAppointments = useMemo(() => {
     return (appointments || []).filter(a => 
-      a && a.date && (a.type === AppointmentType.SITE_VISIT || a.type === AppointmentType.MEETING) && 
+      a && a.date && a.date.length > 5 && (a.type === AppointmentType.SITE_VISIT || a.type === AppointmentType.MEETING) && 
       (!isPast(parseISO(a.date)) || isToday(parseISO(a.date)))
-    ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    ).sort((a, b) => {
+      const dateA = new Date(a.date || 0).getTime();
+      const dateB = new Date(b.date || 0).getTime();
+      return (isNaN(dateA) ? 0 : dateA) - (isNaN(dateB) ? 0 : dateB);
+    });
   }, [appointments]);
 
   const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -904,8 +934,12 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
                   </div>
                 ) : (
                   filteredLeads.map(lead => {
-                    const leadApps = appointments.filter(a => a.leadId === lead.id).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-                    const nextApp = leadApps.find(a => !isPast(parseISO(a.date)) || isToday(parseISO(a.date)));
+                    const leadApps = (appointments || []).filter(a => a && a.leadId === lead.id).sort((a, b) => {
+                      const dateA = new Date(a.date || 0).getTime();
+                      const dateB = new Date(b.date || 0).getTime();
+                      return (isNaN(dateA) ? 0 : dateA) - (isNaN(dateB) ? 0 : dateB);
+                    });
+                    const nextApp = leadApps.find(a => a.date && a.date.length > 5 && (!isPast(parseISO(a.date)) || isToday(parseISO(a.date))));
                     const leadTasks = tasks.filter(t => t.leadId === lead.id && t.status === TaskStatus.PENDING);
 
                     return (
