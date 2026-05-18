@@ -47,7 +47,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ appointments }) => {
   };
 
   const getAppointmentsForDate = (date: Date) => {
-    return appointments.filter(app => isSameDay(parseISO(app.date), date));
+    return (appointments || []).filter(app => app && app.date && app.date.length > 5 && isSameDay(parseISO(app.date), date));
   };
 
   const renderHeader = () => {
@@ -132,7 +132,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ appointments }) => {
                         isSelected ? "bg-white" : 
                         app.type === AppointmentType.CALL ? "bg-blue-500" :
                         app.type === AppointmentType.SITE_VISIT ? "bg-emerald-500" :
-                        isPast(parseISO(app.date)) ? "bg-rose-500" : "bg-blue-500"
+                        (app.date && isPast(parseISO(app.date))) ? "bg-rose-500" : "bg-blue-500"
                       )} 
                     />
                   ))}
@@ -211,7 +211,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ appointments }) => {
                   </div>
                 </div>
 
-                {isPast(parseISO(app.date)) && !isToday(parseISO(app.date)) && (
+                {app.date && isPast(parseISO(app.date)) && !isToday(parseISO(app.date)) && (
                   <div className="flex flex-col items-center gap-1">
                     <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500">
                       <AlertCircle size={16} strokeWidth={3} />
