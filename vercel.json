@@ -1,5 +1,8 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/((?!assets/|favicon.svg|manifest.json).*)",
+      "destination": "/index.html"
+    }
   ]
 }
