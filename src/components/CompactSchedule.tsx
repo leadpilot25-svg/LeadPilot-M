@@ -48,7 +48,7 @@ export function CompactSchedule({ appointments, onItemClick }: CompactSchedulePr
               <span className="text-xs font-bold text-slate-600 truncate">{app.type}</span>
             </div>
             <div className="text-[10px] font-black uppercase text-slate-400 tracking-tight truncate ml-4">
-              {app.leadName}
+              {app.leadName || 'Unnamed Lead'}
             </div>
           </div>
         </button>
