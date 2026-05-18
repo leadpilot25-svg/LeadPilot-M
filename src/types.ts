@@ -49,6 +49,14 @@ export interface Task {
   updatedAt: string;
 }
 
+export enum CallOutcome {
+  CONNECTED = 'Connected',
+  BUSY = 'Busy',
+  NOT_ANSWERED = 'Not Answered',
+  WRONG_NUMBER = 'Wrong Number',
+  FOLLOW_UP_LATER = 'Follow up Later'
+}
+
 export interface Lead {
   id: string;
   firstName: string;
@@ -63,6 +71,7 @@ export interface Lead {
   location?: string;
   source?: string;
   notes?: string;
+  callOutcome?: CallOutcome;
   followUpDate: string; // ISO string
   status: LeadStatus;
   doneReason?: DoneReason;
