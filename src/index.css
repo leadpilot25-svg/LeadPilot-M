@@ -25,6 +25,8 @@
 @layer base {
   body {
     @apply font-sans bg-gray-50 text-gray-900 antialiased selection:bg-emerald-100 selection:text-emerald-900;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
@@ -34,4 +36,13 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.italic-selection::selection {
+  background-color: var(--color-emerald-100);
+  color: var(--color-emerald-900);
+}
+
+* {
+  box-sizing: border-box;
 }
