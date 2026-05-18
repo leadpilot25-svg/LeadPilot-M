@@ -73,12 +73,13 @@ export function ActivitySummary({ counts, activeFilter, onFilterChange }: Activi
 
   return (
     <div className="grid grid-cols-2 gap-2 w-full animate-in fade-in slide-in-from-top-2 duration-500">
-      {items.map((item) => (
+      {items.map(({ type, ...item }) => (
         <SummaryItem 
-          key={item.type}
+          key={type}
+          type={type}
           {...item}
-          isActive={activeFilter === item.type}
-          onClick={() => onFilterChange(activeFilter === item.type ? null : item.type)}
+          isActive={activeFilter === type}
+          onClick={() => onFilterChange(activeFilter === type ? null : type)}
         />
       ))}
     </div>
