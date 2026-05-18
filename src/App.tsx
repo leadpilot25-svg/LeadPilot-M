@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { parseISO, isToday, isPast, isFuture, startOfDay, format } from 'date-fns';
-import { LogOut, Plus, Search, Building2, Users, Bell, AlertCircle, Share2, UserPlus, CheckSquare, Square, ShieldAlert, Loader2, X, LayoutDashboard } from 'lucide-react';
+import { LogOut, Plus, Search, Building2, Users, Bell, AlertCircle, Share2, UserPlus, CheckSquare, Square, ShieldAlert, Loader2, X, LayoutDashboard, Home } from 'lucide-react';
 import { useCollectionData } from 'react-firebase-hooks/firestore';
 import { collection, query, where, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp } from 'firebase/firestore';
 
@@ -28,7 +28,7 @@ import { CompactSchedule } from './components/CompactSchedule';
 import { ReminderSystem } from './components/ReminderSystem';
 
 // Helper for Google Sheets
-const GOOGLE_SHEETS_SCRIPT_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_URL || 'https://script.google.com/macros/s/AKfycbz80LNApVYbkrsq2VSTjGS7ugKcd_cawihq_mqkz7HraswmvLWCft-tkbHVEw6T7Fs52Q/exec';
+const GOOGLE_SHEETS_SCRIPT_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_URL || 'YOUR_APPS_SCRIPT_URL_HERE';
 
 const sendToGoogleSheets = async (lead: any) => {
   const url = GOOGLE_SHEETS_SCRIPT_URL;
@@ -609,8 +609,8 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 font-sans text-gray-900 selection:bg-emerald-100 italic-selection">
-      <div className="max-w-md mx-auto relative min-h-screen">
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 selection:bg-emerald-100 italic-selection overflow-x-hidden">
+      <div className="max-w-md mx-auto relative min-h-screen flex flex-col shadow-2xl shadow-slate-200 bg-white sm:bg-white">
         <ReminderSystem 
           appointments={appointments} 
           onFocusLead={handleFocusLead}
@@ -649,27 +649,28 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
           <header className="px-5 pt-5 pb-3">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-lg border border-slate-100 flex items-center justify-center bg-white transition-all">
+                <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-xl border border-slate-100 flex items-center justify-center bg-white transition-all">
                   <LogoWithFallback />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">LeadPilot</h1>
-                    <button 
-                      onClick={() => setActiveTab('Dashboard')}
-                      className={cn(
-                        "p-1.5 rounded-lg transition-all active:scale-90",
-                        activeTab === 'Dashboard' ? "bg-emerald-500 text-white shadow-lg shadow-emerald-200" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-                      )}
-                    >
-                      <LayoutDashboard size={14} strokeWidth={2.5} />
-                    </button>
-                  </div>
+                  <h1 className="text-2xl font-black tracking-tight text-slate-900 leading-none">LeadPilot</h1>
                   <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-[0.15em] mt-1.5">{todayStr}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setActiveTab('Dashboard')}
+                  className={cn(
+                    "w-11 h-11 flex items-center justify-center rounded-2xl transition-all active:scale-95 border shadow-sm",
+                    activeTab === 'Dashboard' 
+                      ? "bg-emerald-500 border-emerald-500 text-white shadow-xl shadow-emerald-200" 
+                      : "bg-white border-slate-100 text-slate-500 hover:bg-slate-50"
+                  )}
+                >
+                  <Home size={20} strokeWidth={2.5} />
+                </button>
+                
                 <button 
                   onClick={() => logout()}
                   className="bg-white text-gray-400 w-11 h-11 rounded-2xl flex items-center justify-center hover:bg-gray-50 transition-all active:scale-95 border border-slate-100 shadow-sm"
@@ -686,26 +687,15 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
                     <ActivitySummary 
                       counts={stats.activityCounts} 
                       activeFilter={appTypeFilter}
-                      onFilterChange={setAppTypeFilter}
+                      onFilterChange={(type) => {
+                        setAppTypeFilter(type);
+                        if (type) {
+                          window.scrollTo({ top: 400, behavior: 'smooth' });
+                        }
+                      }}
                     />
 
-                    <div id="today-schedule">
-                      <div className="flex items-center justify-between px-1 mb-4">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Today Schedule</p>
-                        {stats.todayAppointments.length > 0 && (
-                          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest border border-emerald-100">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Live Now
-                          </span>
-                        )}
-                      </div>
-                      <CompactSchedule 
-                        appointments={stats.todayAppointments}
-                        onItemClick={handleFocusLead}
-                      />
-                    </div>
-
-                    <div className="pt-4 border-t border-slate-100">
+                    <div className="pt-2 border-t border-slate-100">
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1 mb-4">Quick Stats</p>
                       <StatsCards 
                         todayCount={stats.today} 
@@ -755,16 +745,31 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
                       
                       <div className={cn(
                         "text-[9px] font-black uppercase tracking-widest flex items-center gap-2.5 px-4 py-2.5 rounded-full border shadow-sm transition-colors",
-                        activeTab === 'Today' || activeTab === 'Home' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : 
+                        appTypeFilter === AppointmentType.SITE_VISIT ? "bg-blue-50 text-blue-600 border-blue-100" :
+                        appTypeFilter === AppointmentType.MEETING ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                        appTypeFilter === AppointmentType.FOLLOW_UP ? "bg-slate-50 text-slate-600 border-slate-100" :
+                        appTypeFilter === AppointmentType.CALL ? "bg-orange-50 text-orange-600 border-orange-100" :
+                        activeTab === 'Today' || activeTab === 'Dashboard' ? "bg-slate-50 text-slate-600 border-slate-100" : 
                         activeTab === 'Overdue' ? "bg-rose-50 text-rose-600 border-rose-100" : 
                         "bg-blue-50 text-blue-600 border-blue-100"
                       )}>
                         <span className={cn(
                           "w-1.5 h-1.5 rounded-full",
-                          activeTab === 'Today' || activeTab === 'Dashboard' ? "bg-emerald-500 animate-pulse" : 
+                          appTypeFilter === AppointmentType.SITE_VISIT ? "bg-blue-500 animate-pulse" :
+                          appTypeFilter === AppointmentType.MEETING ? "bg-emerald-500 animate-pulse" :
+                          appTypeFilter === AppointmentType.FOLLOW_UP ? "bg-slate-500 animate-pulse" :
+                          appTypeFilter === AppointmentType.CALL ? "bg-orange-500 animate-pulse" :
+                          activeTab === 'Today' || activeTab === 'Dashboard' ? "bg-slate-400 animate-pulse" : 
                           activeTab === 'Overdue' ? "bg-rose-500 animate-pulse" : "bg-blue-500 animate-pulse"
                         )} />
-                        {filteredLeads.length} {activeTab === 'Dashboard' ? 'Today' : activeTab} Records
+                        {filteredLeads.length} {
+                          appTypeFilter === AppointmentType.SITE_VISIT ? 'Site Visit' :
+                          appTypeFilter === AppointmentType.MEETING ? 'Meeting' :
+                          appTypeFilter === AppointmentType.FOLLOW_UP ? 'Follow-up' :
+                          appTypeFilter === AppointmentType.CALL ? 'Call Back' :
+                          activeTab === 'Dashboard' ? 'HOME' : 
+                          activeTab
+                        } Records
                       </div>
                     </div>
 
@@ -809,7 +814,7 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
           </header>
         </div>
 
-        <main className="p-5 space-y-8">
+        <main className="p-5 pb-32 space-y-8 flex-1">
           {activeTab === 'Stats' ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <StatsPage 
