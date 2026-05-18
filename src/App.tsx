@@ -25,6 +25,7 @@ import { db, logout, handleFirestoreError, OperationType } from './lib/firebase'
 
 import { ActivitySummary } from './components/ActivitySummary';
 import { CompactSchedule } from './components/CompactSchedule';
+import { ReminderSystem } from './components/ReminderSystem';
 
 // Helper for Google Sheets
 const GOOGLE_SHEETS_SCRIPT_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_URL || 'https://script.google.com/macros/s/AKfycbz80LNApVYbkrsq2VSTjGS7ugKcd_cawihq_mqkz7HraswmvLWCft-tkbHVEw6T7Fs52Q/exec';
@@ -159,11 +160,6 @@ const LogoWithFallback = () => {
   );
 };
 
-import { ActivitySummary } from './components/ActivitySummary';
-import { CompactSchedule } from './components/CompactSchedule';
-
-import { ReminderSystem } from './components/ReminderSystem';
-
 function Dashboard({ user, clientData, leads, appointments, tasks }: { 
   user: any;
   clientData: any;
@@ -247,10 +243,13 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
     }
 
     if (appTypeFilter) {
-      const idsWithApp = appointments
-        .filter(a => a.type === appTypeFilter && isToday(parseISO(a.date)))
+      const idsWithApp = (appointments || [])
+        .filter(a => a && a.type === appTypeFilter && a.date && isToday(parseISO(a.date)))
         .map(a => a.leadId);
-      result = result.filter(l => idsWithApp.includes(l.id));
+      result = result.filter(l => l && idsWithApp.includes(l.id));
+      
+      // If we are filtering by appointment type, we don't want the tab filters to hide our results
+      return result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     }
 
     switch (activeTab) {
@@ -288,8 +287,8 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
 
   const stats = useMemo(() => {
     const list = leadsByAccess || [];
-    const todayApps = appointments.filter(a => isToday(parseISO(a.date)));
-    const todayDoneLeads = list.filter(l => l && l.status === LeadStatus.DONE && l.updatedAt && isToday(parseISO(l.updatedAt))).length;
+    const todayApps = (appointments || []).filter(a => a && a.date && isToday(parseISO(a.date)));
+    const todayDoneLeads = list.filter(l => l && l.status === LeadStatus.DONE && l.updatedAt && l.updatedAt.length > 5 && isToday(parseISO(l.updatedAt))).length;
     
     // Dynamic counts for activity summary
     const activityCounts: Record<AppointmentType, number> = {
@@ -315,8 +314,8 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
   }, [leadsByAccess, appointments]);
 
   const priorityAppointments = useMemo(() => {
-    return appointments.filter(a => 
-      (a.type === AppointmentType.SITE_VISIT || a.type === AppointmentType.MEETING) && 
+    return (appointments || []).filter(a => 
+      a && a.date && (a.type === AppointmentType.SITE_VISIT || a.type === AppointmentType.MEETING) && 
       (!isPast(parseISO(a.date)) || isToday(parseISO(a.date)))
     ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [appointments]);
