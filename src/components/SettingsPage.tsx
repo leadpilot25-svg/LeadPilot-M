@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, LogOut, Check, Save, UserCircle, Briefcase, Mail, UserPlus, Trash2, ShieldCheck, AlertCircle, PlusCircle, Share2 } from 'lucide-react';
+import { User, LogOut, Check, Save, UserCircle, Briefcase, Mail, UserPlus, Trash2, ShieldCheck, AlertCircle, PlusCircle, Share2, Bell } from 'lucide-react';
 import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { User as UserType } from '../types';
 import { db } from '../lib/firebase';
