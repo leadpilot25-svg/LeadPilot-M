@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Loader2, Award, UserPlus } from 'lucide-react';
-import { Lead, LeadStatus, DoneReason, AppointmentType } from '../types';
+import { X, Loader2, Award, UserPlus, PhoneCall, Calendar, MessageSquare, ClipboardList } from 'lucide-react';
+import { Lead, LeadStatus, DoneReason, AppointmentType, CallOutcome } from '../types';
 import { format } from 'date-fns';
 import { PROPERTIES } from '../constants';
 import { cn } from '../lib/utils';
@@ -24,12 +24,14 @@ export function UpdateCallModal({ lead, isOpen, onClose, onUpdate, onSchedule, t
     location: '',
     propertyType: '',
     appTime: '10:00',
-    appType: AppointmentType.FOLLOW_UP as string
+    appType: AppointmentType.FOLLOW_UP as string,
+    callOutcome: '' as string
   });
 
   // Reset/sync form when lead changes
   React.useEffect(() => {
-    if (lead) {
+    if (lead && isOpen) {
+      document.body.style.overflow = 'hidden';
       setFormData({
         followUpDate: lead.followUpDate ? format(new Date(lead.followUpDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
         notes: lead.notes || '',
@@ -37,11 +39,17 @@ export function UpdateCallModal({ lead, isOpen, onClose, onUpdate, onSchedule, t
         location: lead.location || '',
         propertyType: lead.property || '',
         appTime: '10:00',
-        appType: AppointmentType.FOLLOW_UP
+        appType: AppointmentType.FOLLOW_UP,
+        callOutcome: (lead.callOutcome as string) || ''
       });
       setCreateApp(false);
+    } else {
+      document.body.style.overflow = 'unset';
     }
-  }, [lead]);
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [lead, isOpen]);
 
   if (!isOpen || !lead) return null;
 
@@ -54,7 +62,8 @@ export function UpdateCallModal({ lead, isOpen, onClose, onUpdate, onSchedule, t
       notes: formData.notes,
       budget: formData.budget,
       location: formData.location,
-      property: formData.propertyType
+      property: formData.propertyType,
+      callOutcome: formData.callOutcome as CallOutcome || undefined
     };
 
     await onUpdate(lead.id, updates);
@@ -76,65 +85,73 @@ export function UpdateCallModal({ lead, isOpen, onClose, onUpdate, onSchedule, t
     onClose();
   };
 
+  const outcomes = Object.values(CallOutcome);
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-full duration-300">
-        <div className="p-4 border-b flex justify-between items-center bg-gray-50/50">
-          <h3 className="font-bold text-gray-900">Update After Call</h3>
-          <button onClick={onClose} className="p-1 text-gray-400"><X size={20} /></button>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-full duration-500 max-h-[92vh] flex flex-col">
+        {/* Header */}
+        <div className="p-6 border-b flex justify-between items-center bg-white shrink-0">
+          <h3 className="font-bold text-slate-800 text-lg">Update After Call</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full text-slate-400 flex items-center justify-center hover:bg-slate-50 transition-all">
+            <X size={20} />
+          </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto no-scrollbar pb-10">
+          {/* Next Follow-up */}
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Next Follow-up *</label>
+            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Next Follow-up *</label>
             <input 
               type="date" 
               required
               value={formData.followUpDate}
               onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
-              className="w-full p-3 rounded-xl border border-gray-100 bg-gray-50 font-medium text-sm focus:outline-none focus:border-emerald-500"
+              className="w-full px-4 py-4 rounded-2xl border-2 border-slate-50 bg-slate-50 font-bold text-sm focus:outline-none focus:border-emerald-500 transition-all"
             />
           </div>
 
+          {/* Call Notes */}
           <div>
-             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Call Notes</label>
-             <textarea 
-               rows={3}
-               value={formData.notes}
-               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-               placeholder="What did the client say?"
-               className="w-full p-3 rounded-xl border border-gray-100 bg-gray-50 font-medium text-sm focus:outline-none focus:border-emerald-500 resize-none"
-             />
+            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Call Notes</label>
+            <textarea 
+              rows={4}
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="What did the client say?"
+              className="w-full p-4 rounded-2xl border-2 border-slate-50 bg-slate-50 font-bold text-sm focus:outline-none focus:border-emerald-500 transition-all resize-none placeholder:text-slate-300"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-             <div>
-               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Budget</label>
-               <input 
-                 type="text" 
-                 value={formData.budget}
-                 onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                 placeholder="e.g. 50L"
-                 className="w-full p-3 rounded-xl border border-gray-100 bg-gray-50 font-medium text-sm focus:outline-none focus:border-emerald-500"
-               />
-             </div>
-             <div>
-               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Location</label>
-               <input 
-                 type="text" 
-                 value={formData.location}
-                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                 placeholder="e.g. Kochi"
-                 className="w-full p-3 rounded-xl border border-gray-100 bg-gray-50 font-medium text-sm focus:outline-none focus:border-emerald-500"
-               />
-             </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Budget</label>
+              <input 
+                type="text" 
+                value={formData.budget}
+                onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                placeholder="e.g. 50L"
+                className="w-full p-4 rounded-2xl border-2 border-slate-50 bg-slate-50 font-bold text-sm focus:outline-none focus:border-emerald-500 transition-all placeholder:text-slate-300"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Location</label>
+              <input 
+                type="text" 
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="e.g. Kochi"
+                className="w-full p-4 rounded-2xl border-2 border-slate-50 bg-slate-50 font-bold text-sm focus:outline-none focus:border-emerald-500 transition-all placeholder:text-slate-300"
+              />
+            </div>
           </div>
 
           <div>
-             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Property Interest</label>
+             <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Property Interest</label>
              <select 
                value={formData.propertyType}
                onChange={(e) => setFormData({ ...formData, propertyType: e.target.value })}
-               className="w-full p-3 rounded-xl border border-gray-100 bg-gray-50 font-medium text-sm focus:outline-none focus:border-emerald-500"
+               className="w-full p-4 rounded-2xl border-2 border-slate-50 bg-slate-50 font-bold text-sm focus:outline-none focus:border-emerald-500 transition-all appearance-none"
              >
                <option value="">Select Category...</option>
                <option value="Apartment">Apartment</option>
@@ -146,58 +163,13 @@ export function UpdateCallModal({ lead, isOpen, onClose, onUpdate, onSchedule, t
 
           <div className="pt-2">
             <button
-              type="button"
-              onClick={() => setCreateApp(!createApp)}
-              className={cn(
-                "w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all",
-                createApp ? "bg-emerald-50 border-emerald-500 text-emerald-700" : "bg-gray-50 border-gray-100 text-gray-400"
-              )}
+              disabled={loading}
+              className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-bold text-sm shadow-xl shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-2"
             >
-              <div className="flex items-center gap-3">
-                <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all", createApp ? "bg-emerald-500 border-emerald-500" : "border-gray-200 bg-white")}>
-                  {createApp && <div className="w-2 h-2 bg-white rounded-full" />}
-                </div>
-                <span className="text-xs font-black uppercase tracking-widest">Schedule Appointment</span>
-              </div>
+              {loading && <Loader2 size={20} className="animate-spin" />}
+              Save Status Update
             </button>
           </div>
-
-          {createApp && (
-            <div className="space-y-4 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50 animate-in zoom-in duration-200">
-               <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Time</label>
-                    <input 
-                      type="time" 
-                      value={formData.appTime}
-                      onChange={(e) => setFormData({ ...formData, appTime: e.target.value })}
-                      className="w-full p-3 rounded-xl bg-white border border-emerald-100 text-xs font-bold focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Type</label>
-                    <select 
-                      value={formData.appType}
-                      onChange={(e) => setFormData({ ...formData, appType: e.target.value })}
-                      className="w-full p-3 rounded-xl bg-white border border-emerald-100 text-xs font-bold focus:outline-none"
-                    >
-                      <option value={AppointmentType.FOLLOW_UP}>Follow-up</option>
-                      <option value={AppointmentType.SITE_VISIT}>Site Visit</option>
-                      <option value={AppointmentType.MEETING}>Meeting</option>
-                      <option value={AppointmentType.CALL}>Call Back</option>
-                    </select>
-                  </div>
-               </div>
-            </div>
-          )}
-
-          <button
-            disabled={loading}
-            className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-50 active:scale-95 transition-all"
-          >
-            {loading && <Loader2 size={18} className="animate-spin" />}
-            Save Status Update
-          </button>
         </form>
       </div>
     </div>
@@ -214,6 +186,17 @@ interface MarkDoneModalProps {
 export function MarkDoneModal({ lead, isOpen, onClose, onConfirm }: MarkDoneModalProps) {
   const [loading, setLoading] = useState(false);
   const [reason, setReason] = useState<DoneReason | ''>('');
+
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   if (!isOpen || !lead) return null;
 
@@ -270,6 +253,17 @@ interface ReassignModalProps {
 
 export function ReassignModal({ isOpen, lead, onClose, onReassign, teamMembers }: ReassignModalProps) {
   const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   if (!isOpen || !lead) return null;
 
