@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { X, Loader2, Award, UserPlus, PhoneCall, Calendar, MessageSquare, ClipboardList } from 'lucide-react';
 import { Lead, LeadStatus, DoneReason, AppointmentType, CallOutcome } from '../types';
 import { format } from 'date-fns';
-import { PROPERTIES } from '../constants';
 import { cn } from '../lib/utils';
 
 interface UpdateCallModalProps {
