@@ -313,15 +313,18 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
 
   const stats = useMemo(() => {
     const list = leadsByAccess || [];
-    const todayApps = (appointments || []).filter(a => a && a.date && a.date.length > 5 && isToday(parseISO(a.date)));
+    const accessibleLeadIds = new Set(list.map(l => l.id));
+    const todayAcrossAccess = (appointments || []).filter(a => 
+      a && a.date && a.date.length > 5 && isToday(parseISO(a.date)) && accessibleLeadIds.has(a.leadId)
+    );
     const todayDoneLeads = list.filter(l => l && l.status === LeadStatus.DONE && l.updatedAt && l.updatedAt.length > 5 && isToday(parseISO(l.updatedAt))).length;
     
     // Dynamic counts for activity summary
     const activityCounts: Record<AppointmentType, number> = {
-      [AppointmentType.CALL]: todayApps.filter(a => a && a.type === AppointmentType.CALL).length,
-      [AppointmentType.SITE_VISIT]: todayApps.filter(a => a && a.type === AppointmentType.SITE_VISIT).length,
-      [AppointmentType.MEETING]: todayApps.filter(a => a && a.type === AppointmentType.MEETING).length,
-      [AppointmentType.FOLLOW_UP]: todayApps.filter(a => a && a.type === AppointmentType.FOLLOW_UP).length,
+      [AppointmentType.CALL]: todayAcrossAccess.filter(a => a && a.type === AppointmentType.CALL).length,
+      [AppointmentType.SITE_VISIT]: todayAcrossAccess.filter(a => a && a.type === AppointmentType.SITE_VISIT).length,
+      [AppointmentType.MEETING]: todayAcrossAccess.filter(a => a && a.type === AppointmentType.MEETING).length,
+      [AppointmentType.FOLLOW_UP]: todayAcrossAccess.filter(a => a && a.type === AppointmentType.FOLLOW_UP).length,
     };
 
     return {
@@ -332,10 +335,10 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
       done: list.filter(l => l && l.status === LeadStatus.DONE).length,
       doneToday: todayDoneLeads,
       dailyGoal: 20,
-      busyLevel: todayApps.length > 8 ? 'High' : todayApps.length > 4 ? 'Moderate' : 'Light',
+      busyLevel: todayAcrossAccess.length > 8 ? 'High' : todayAcrossAccess.length > 4 ? 'Moderate' : 'Light',
       activityCounts,
-      todayAppointments: todayApps,
-      totalActivitiesToday: todayApps.length
+      todayAppointments: todayAcrossAccess,
+      totalActivitiesToday: todayAcrossAccess.length
     };
   }, [leadsByAccess, appointments]);
 
@@ -680,51 +683,6 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
               <div className="space-y-5 animate-in fade-in slide-in-from-top-4 duration-500">
                 {activeTab === 'Dashboard' && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
-                    {/* Header with Activity Count */}
-                    <div className="flex items-center justify-between px-1">
-                      <h2 className="text-xl font-black text-slate-900 tracking-tight">Today – {stats.totalActivitiesToday} Activities</h2>
-                      <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">{todayStr}</p>
-                    </div>
-
-                    {/* Productivity Hub */}
-                    <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50">
-                      <div className="flex items-center justify-between mb-6">
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Personal Goal</p>
-                          <h3 className="text-xl font-black text-slate-900">Today's Focus</h3>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs font-black text-emerald-500">{Math.round((stats.doneToday / stats.dailyGoal) * 100)}%</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">Reached</p>
-                        </div>
-                      </div>
-                      
-                      <div className="relative h-2.5 w-full bg-slate-100 rounded-full overflow-hidden mb-6">
-                        <div 
-                          className="absolute top-0 left-0 h-full bg-emerald-500 rounded-full transition-all duration-1000 shadow-lg shadow-emerald-200"
-                          style={{ width: `${Math.min(100, (stats.doneToday / stats.dailyGoal) * 100)}%` }}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
-                          <p className="text-lg font-black text-slate-900">{stats.doneToday}</p>
-                          <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Completed</p>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
-                          <p className="text-lg font-black text-slate-900">{stats.dailyGoal}</p>
-                          <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Target</p>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
-                          <p className={cn(
-                            "text-[10px] font-black uppercase tracking-widest py-2 rounded-xl h-full flex items-center justify-center",
-                            stats.busyLevel === 'High' ? "text-rose-500" : "text-emerald-500"
-                          )}>{stats.busyLevel}</p>
-                          <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Workload</p>
-                        </div>
-                      </div>
-                    </div>
-
                     <ActivitySummary 
                       counts={stats.activityCounts} 
                       activeFilter={appTypeFilter}
