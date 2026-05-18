@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { Lead, LeadStatus, User } from '../types';
 import { format } from 'date-fns';
-import { USERS, LEAD_SOURCES, PROPERTIES, PROPERTY_TYPES } from '../constants';
+import { USERS, LEAD_SOURCES, PROPERTY_TYPES } from '../constants';
 
 interface AddLeadModalProps {
   isOpen: boolean;
