@@ -3,9 +3,10 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
+const firebaseConfigData = firebaseConfig || {};
+const app = initializeApp(firebaseConfigData);
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app, (firebaseConfigData as any).firestoreDatabaseId || '(default)');
 export const googleProvider = new GoogleAuthProvider();
 
 export enum OperationType {
