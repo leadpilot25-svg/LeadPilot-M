@@ -23,6 +23,13 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   const [notes, setNotes] = useState('');
   const [assignedTo, setAssignedTo] = useState(lead.assignedTo || 'admin');
 
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSchedule({
