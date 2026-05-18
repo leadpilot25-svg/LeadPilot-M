@@ -30,10 +30,16 @@ export function ReminderSystem({ appointments, onFocusLead, enabled = true }: Re
       const newReminders: Reminder[] = [];
 
       appointments.forEach(app => {
-        if (!isToday(parseISO(app.date))) return;
+        if (!app || !app.date || !app.time || !isToday(parseISO(app.date))) return;
 
         // Parse time (HH:mm)
-        const [hours, minutes] = app.time.split(':').map(Number);
+        const timeParts = app.time.split(':');
+        if (timeParts.length < 2) return;
+        
+        const hours = Number(timeParts[0]);
+        const minutes = Number(timeParts[1]);
+        if (isNaN(hours) || isNaN(minutes)) return;
+        
         const appDate = new Date(now);
         appDate.setHours(hours, minutes, 0, 0);
 
@@ -76,7 +82,7 @@ export function ReminderSystem({ appointments, onFocusLead, enabled = true }: Re
     checkReminders(); // Initial check
 
     return () => clearInterval(interval);
-}, [appointments, enabled, processedReminders]);
+  }, [appointments, enabled, processedReminders]);
 
   const removeReminder = (id: string) => {
     setActiveReminders(prev => prev.filter(r => r.id !== id));
