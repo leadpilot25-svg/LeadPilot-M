@@ -13,7 +13,7 @@ interface SummaryItemProps {
   onClick: () => void;
 }
 
-const SummaryItem = ({ count, label, color, icon, isActive, onClick }: SummaryItemProps) => (
+const SummaryItem = ({ type, count, label, color, icon, isActive, onClick }: SummaryItemProps) => (
   <button 
     onClick={onClick}
     className={cn(
@@ -73,15 +73,29 @@ export function ActivitySummary({ counts, activeFilter, onFilterChange }: Activi
 
   return (
     <div className="grid grid-cols-2 gap-2 w-full animate-in fade-in slide-in-from-top-2 duration-500">
-      {items.map(({ type, ...item }) => (
-        <SummaryItem 
-          key={type}
-          type={type}
-          {...item}
-          isActive={activeFilter === type}
-          onClick={() => onFilterChange(activeFilter === type ? null : type)}
-        />
-      ))}
+      {items.map((item) => {
+        const isActive = activeFilter === item.type;
+        return (
+          <button 
+            key={item.type}
+            onClick={() => onFilterChange(isActive ? null : item.type)}
+            className={cn(
+              "flex-1 flex items-center gap-2 p-2.5 rounded-2xl border transition-all active:scale-95",
+              isActive 
+                ? `${item.color.split(' ')[0]} border-current ring-1 ring-current` 
+                : "bg-white border-slate-100 text-slate-500 hover:bg-slate-50"
+            )}
+          >
+            <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", item.color)}>
+              {item.icon}
+            </div>
+            <div className="text-left leading-none">
+              <p className="text-sm font-black text-slate-900">{item.count}</p>
+              <p className="text-[8px] font-black uppercase tracking-tighter opacity-60 mt-0.5">{item.label}</p>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
