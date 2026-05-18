@@ -26,9 +26,15 @@ export function CompactSchedule({ appointments, onItemClick }: CompactSchedulePr
     }
   };
 
+  const sortedAppointments = [...appointments].sort((a, b) => {
+    const timeA = a.time || '';
+    const timeB = b.time || '';
+    return timeA.localeCompare(timeB);
+  });
+
   return (
     <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-700">
-      {appointments.sort((a,b) => a.time.localeCompare(b.time)).map((app) => (
+      {sortedAppointments.map((app) => (
         <button
           key={app.id}
           onClick={() => onItemClick(app.leadId)}
