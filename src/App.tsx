@@ -1009,10 +1009,38 @@ function App() {
   const [tasksValue] = useCollectionData(tasksQuery);
   const tasks = (tasksValue as Task[]) || [];
 
+  const [initializationStatus, setInitializationStatus] = useState<'loading' | 'slow'>('loading');
+
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        setInitializationStatus('slow');
+      }, 5000);
+      return () => clearTimeout(timer);
+    } else {
+      setInitializationStatus('loading');
+    }
+  }, [loading]);
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
-        <Loader2 className="animate-spin text-emerald-500" size={48} />
+      <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center p-6 text-center">
+        <Loader2 className="animate-spin text-emerald-500 mb-4" size={48} />
+        {initializationStatus === 'slow' && (
+          <div className="animate-in fade-in duration-500 space-y-4">
+            <p className="text-slate-500 font-bold">Taking longer than usual...</p>
+            <p className="text-[10px] text-slate-400 uppercase tracking-widest leading-relaxed">
+              Verifying Authentication & Connection<br/>
+              Check if Firebase is reachable
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-black text-slate-600 hover:bg-slate-50 active:scale-95 transition-all shadow-sm"
+            >
+              Reload App
+            </button>
+          </div>
+        )}
       </div>
     );
   }
