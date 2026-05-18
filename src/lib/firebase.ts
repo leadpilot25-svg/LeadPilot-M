@@ -1,22 +1,42 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, FirebaseOptions } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
 
-// Ensure we have a valid config to prevent initializeApp from throwing
-const getValidConfig = () => {
-  if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey === 'YOUR_API_KEY') {
-    console.warn('Firebase configuration is missing or invalid. Please run set_up_firebase.');
+// Configuration check - we prioritize env variables then fallback to a safe state
+const getValidConfig = (): FirebaseOptions => {
+  const envConfig = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID,
+  };
+
+  if (envConfig.apiKey && envConfig.apiKey !== 'YOUR_API_KEY' && envConfig.apiKey !== 'placeholder') {
     return {
-      apiKey: "placeholder",
-      authDomain: "placeholder",
-      projectId: "placeholder",
-      storageBucket: "placeholder",
-      messagingSenderId: "placeholder",
-      appId: "placeholder"
-    };
+      apiKey: envConfig.apiKey,
+      authDomain: envConfig.authDomain,
+      projectId: envConfig.projectId,
+      storageBucket: envConfig.storageBucket,
+      messagingSenderId: envConfig.messagingSenderId,
+      appId: envConfig.appId,
+      // Pass the specific databaseId since it's Enterprise edition
+      firestoreDatabaseId: envConfig.firestoreDatabaseId
+    } as any;
   }
-  return firebaseConfig;
+
+  // If no env vars, we might be in local dev with the platform's injected config
+  // In Vercel, this usually means the build should proceed with placeholders if not set
+  return {
+    apiKey: "placeholder",
+    authDomain: "placeholder",
+    projectId: "placeholder",
+    storageBucket: "placeholder",
+    messagingSenderId: "placeholder",
+    appId: "placeholder"
+  };
 };
 
 const firebaseConfigData = getValidConfig();
