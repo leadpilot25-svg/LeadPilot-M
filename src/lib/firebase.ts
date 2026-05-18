@@ -3,7 +3,23 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
-const firebaseConfigData = firebaseConfig || {};
+// Ensure we have a valid config to prevent initializeApp from throwing
+const getValidConfig = () => {
+  if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey === 'YOUR_API_KEY') {
+    console.warn('Firebase configuration is missing or invalid. Please run set_up_firebase.');
+    return {
+      apiKey: "placeholder",
+      authDomain: "placeholder",
+      projectId: "placeholder",
+      storageBucket: "placeholder",
+      messagingSenderId: "placeholder",
+      appId: "placeholder"
+    };
+  }
+  return firebaseConfig;
+};
+
+const firebaseConfigData = getValidConfig();
 const app = initializeApp(firebaseConfigData);
 export const auth = getAuth(app);
 export const db = getFirestore(app, (firebaseConfigData as any).firestoreDatabaseId || '(default)');
