@@ -27,7 +27,7 @@ import { ActivitySummary } from './components/ActivitySummary';
 import { CompactSchedule } from './components/CompactSchedule';
 
 // Helper for Google Sheets
-const GOOGLE_SHEETS_SCRIPT_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_URL || 'YOUR_APPS_SCRIPT_URL_HERE';
+const GOOGLE_SHEETS_SCRIPT_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_URL || 'https://script.google.com/macros/s/AKfycbz80LNApVYbkrsq2VSTjGS7ugKcd_cawihq_mqkz7HraswmvLWCft-tkbHVEw6T7Fs52Q/exec';
 
 const sendToGoogleSheets = async (lead: any) => {
   const url = GOOGLE_SHEETS_SCRIPT_URL;
