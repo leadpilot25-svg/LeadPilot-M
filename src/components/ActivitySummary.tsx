@@ -43,36 +43,36 @@ export function ActivitySummary({ counts, activeFilter, onFilterChange }: Activi
   const items = [
     { 
       type: AppointmentType.SITE_VISIT, 
-      label: 'Site Visits', 
+      label: 'SITE VISITS', 
       color: 'bg-blue-500 text-white', 
-      icon: <MapPin size={14} />,
+      icon: <MapPin size={18} fill="currentColor" fillOpacity={0.2} />,
       count: counts[AppointmentType.SITE_VISIT] || 0
     },
     { 
       type: AppointmentType.MEETING, 
-      label: 'Meetings', 
+      label: 'MEETINGS', 
       color: 'bg-emerald-500 text-white', 
-      icon: <Video size={14} />,
+      icon: <Video size={18} fill="currentColor" fillOpacity={0.2} />,
       count: counts[AppointmentType.MEETING] || 0
     },
     { 
       type: AppointmentType.FOLLOW_UP, 
-      label: 'Follow-ups', 
-      color: 'bg-slate-400 text-white', 
-      icon: <Calendar size={14} />,
+      label: 'FOLLOW-UPS', 
+      color: 'bg-slate-500 text-white', 
+      icon: <Calendar size={18} fill="currentColor" fillOpacity={0.2} />,
       count: counts[AppointmentType.FOLLOW_UP] || 0
     },
     { 
       type: AppointmentType.CALL, 
-      label: 'Call Backs', 
+      label: 'CALL BACKS', 
       color: 'bg-orange-500 text-white', 
-      icon: <Phone size={14} />,
+      icon: <Phone size={18} fill="currentColor" fillOpacity={0.2} />,
       count: counts[AppointmentType.CALL] || 0
     }
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2 w-full animate-in fade-in slide-in-from-top-2 duration-500">
+    <div className="grid grid-cols-2 gap-3 w-full animate-in fade-in slide-in-from-top-2 duration-500">
       {items.map((item) => {
         const isActive = activeFilter === item.type;
         return (
@@ -80,19 +80,31 @@ export function ActivitySummary({ counts, activeFilter, onFilterChange }: Activi
             key={item.type}
             onClick={() => onFilterChange(isActive ? null : item.type)}
             className={cn(
-              "flex-1 flex items-center gap-2 p-2.5 rounded-2xl border transition-all active:scale-95",
+              "flex items-center gap-4 p-4 rounded-[1.8rem] border-2 transition-all active:scale-[0.98] text-left relative overflow-hidden group",
               isActive 
-                ? `${item.color.split(' ')[0]} border-current ring-1 ring-current` 
-                : "bg-white border-slate-100 text-slate-500 hover:bg-slate-50"
+                ? "bg-white border-slate-900 shadow-xl shadow-slate-200" 
+                : "bg-white border-slate-50 hover:border-slate-100 shadow-sm"
             )}
           >
-            <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", item.color)}>
+            <div className={cn(
+              "w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-transform duration-500",
+              item.color,
+              isActive ? "scale-110" : "group-hover:scale-105"
+            )}>
               {item.icon}
             </div>
-            <div className="text-left leading-none">
-              <p className="text-sm font-black text-slate-900">{item.count}</p>
-              <p className="text-[8px] font-black uppercase tracking-tighter opacity-60 mt-0.5">{item.label}</p>
+            <div className="min-w-0">
+              <p className={cn(
+                "text-2xl font-black tracking-tight leading-none mb-1",
+                isActive ? "text-slate-900" : "text-slate-800"
+              )}>{item.count}</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-500 transition-colors whitespace-nowrap">
+                {item.label}
+              </p>
             </div>
+            {isActive && (
+              <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-slate-900" />
+            )}
           </button>
         );
       })}
