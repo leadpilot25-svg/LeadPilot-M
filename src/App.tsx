@@ -30,10 +30,12 @@ import { ReminderSystem } from './components/ReminderSystem';
 // Helper for Google Sheets
 const GOOGLE_SHEETS_SCRIPT_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_URL || 'YOUR_APPS_SCRIPT_URL_HERE';
 
-const sendToGoogleSheets = async (lead: any) => {
-  const url = GOOGLE_SHEETS_SCRIPT_URL;
-  if (!url || url === 'YOUR_APPS_SCRIPT_URL_HERE') return;
-  
+const url = lead.sheetUrl;
+
+if (!url) {
+  console.error("No sheet URL found");
+  return;
+}
   try {
     // Map to EXACT column names requested by user
     const payload = {
@@ -537,8 +539,10 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
     };
     
     await setDoc(doc(db, 'leads', leadId), newLead);
-    await sendToGoogleSheets(newLead);
-  };
+   await sendToGoogleSheets({
+  ...newLead,
+  sheetUrl: clientData.sheetUrl
+});
 
   const updateLeadFollowUp = async (leadId: string, updates: Partial<Lead>) => {
     try {
