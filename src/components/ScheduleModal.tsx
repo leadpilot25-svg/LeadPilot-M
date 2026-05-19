@@ -17,7 +17,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   onSchedule,
   teamMembers
 }) => {
-  const [type, setType] = useState<AppointmentType>(AppointmentType.CALL);
+  const [type, setType] = useState<AppointmentType>(AppointmentType.CALL_BACK);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [time, setTime] = useState('10:00');
   const [notes, setNotes] = useState('');
@@ -44,7 +44,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   };
 
   const types = [
-    { id: AppointmentType.CALL, icon: Phone, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { id: AppointmentType.CALL_BACK, icon: Phone, color: 'text-blue-600', bg: 'bg-blue-50' },
     { id: AppointmentType.SITE_VISIT, icon: MapPin, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { id: AppointmentType.MEETING, icon: Video, color: 'text-purple-600', bg: 'bg-purple-50' },
     { id: AppointmentType.FOLLOW_UP, icon: Calendar, color: 'text-orange-600', bg: 'bg-orange-50' },
