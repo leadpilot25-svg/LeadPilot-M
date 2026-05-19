@@ -28,7 +28,7 @@ import { CompactSchedule } from './components/CompactSchedule';
 import { ReminderSystem } from './components/ReminderSystem';
 
 // Helper for Google Sheets
-const GOOGLE_SHEETS_SCRIPT_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_URL || 'YOUR_APPS_SCRIPT_URL_HERE';
+const GOOGLE_SHEETS_SCRIPT_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_URL || 'https://script.google.com/macros/s/AKfycbxKrkCC9GQ0D7FOkZfJTasJmRmr-44cOUjjlUPIXfloLvcKQaQ-6swQ9XzruceXNqSPJQ/exec';
 
 const sendToGoogleSheets = async (lead: any) => {
   const url = GOOGLE_SHEETS_SCRIPT_URL;
