@@ -21,7 +21,7 @@ export function CompactSchedule({ appointments, onItemClick }: CompactSchedulePr
     switch (type) {
       case AppointmentType.SITE_VISIT: return "bg-blue-500";
       case AppointmentType.MEETING: return "bg-emerald-500";
-      case AppointmentType.CALL: return "bg-orange-500";
+      case AppointmentType.CALL_BACK: return "bg-orange-500";
       default: return "bg-slate-400";
     }
   };
