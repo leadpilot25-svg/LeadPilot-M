@@ -1,14 +1,15 @@
 import { User } from './types';
 
-// Authorized CRM Users
+// 🔐 AUTHENTICATION & ACCESS CONTROL
+// Primary control is now managed via Firebase Firestore (clients collection).
+// To add a new client without redeploying:
+// 1. Go to Firebase Console -> Firestore
+// 2. Add/Edit a document in 'clients' collection
+// 3. Add the email to the 'users' array field
 export const USERS: User[] = [
   { id: 'admin1', username: 'LeadPilot Admin', email: 'leadpilot25@gmail.com', role: 'admin' },
-
   { id: 'client1', username: 'LeadPilot Admin1', email: 'leadpilot26.client@gmail.com', role: 'admin' },
-
-  { id: 'client2', username: 'LeadPilot Master', email: 'mail.nasiya@gmail.com', role: 'admin' },
-
-  { id: 'client3', username: 'Client User', email: 'gsarun84@gmail.com', role: 'admin' }
+  { id: 'client2', username: 'LeadPilot Master', email: 'leadpilotclient@gmail.com', role: 'admin' }
 ];
 
 // To add more users, simply add a new object to the USERS array above:
