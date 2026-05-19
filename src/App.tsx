@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { parseISO, isToday, isPast, isFuture, startOfDay, format } from 'date-fns';
-import { LogOut, Plus, Search, Building2, Users, Bell, AlertCircle, Share2, UserPlus, CheckSquare, Square, ShieldAlert, Loader2, X, LayoutDashboard, Home } from 'lucide-react';
+import { LogOut, Plus, Search, Building2, Users, Bell, AlertCircle, Share2, UserPlus, CheckSquare, Square, ShieldAlert, Loader2, X, LayoutDashboard, Home, MapPin, Video, PhoneCall } from 'lucide-react';
 import { useCollectionData } from 'react-firebase-hooks/firestore';
-import { collection, query, where, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp, limit } from 'firebase/firestore';
 
-import { Lead, LeadStatus, DoneReason, FilterTab, Appointment, Task, TaskStatus, AppointmentType } from './types';
+import { Lead, LeadStatus, DoneReason, FilterTab, Appointment, Task, TaskStatus, AppointmentType, CallOutcome } from './types';
 import { USERS } from './constants';
 import LoginForm from './components/LoginForm';
 import PublicLeadForm from './components/PublicLeadForm';
@@ -67,28 +67,59 @@ const sendToGoogleSheets = async (lead: any) => {
 
 function AccessDenied({ email }: { email: string }) {
   const [initializing, setInitializing] = useState(false);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
   const { error: authError } = useAuth();
 
-  // Auto-init for the platform user to make it easier
+  const MASTER_ADMIN = 'leadpilot25@gmail.com';
+
+  // Auto-init for authorized team members
   const handleInitialize = async () => {
     setInitializing(true);
-    const clientId = 'client_lp_' + Math.random().toString(36).substr(2, 5);
-    const path = `clients/${clientId}`;
+    const emailLower = email.toLowerCase();
+    
     try {
-      await setDoc(doc(db, 'clients', clientId), {
-        clientId,
-        maxUsers: 3,
-        users: [email],
-        ownerEmail: email,
-        name: 'LeadPilot Master',
-        defaultAgent: 'admin',
-        createdAt: new Date().toISOString()
-      });
-      console.log("Initialization successful for:", email);
+      // We use a fixed client ID for the Master Team to ensure everyone stays together
+      const MASTER_CLIENT_ID = 'client_lp_master_v1';
+      const clientsRef = collection(db, 'clients');
+      
+      const authorizedEmails = Array.from(new Set([
+        MASTER_ADMIN,
+        ...USERS.map(u => u.email.toLowerCase()),
+        emailLower
+      ]));
+
+      // Check if document exists first
+      const clientDoc = await getDoc(doc(db, 'clients', MASTER_CLIENT_ID));
+      
+      if (clientDoc.exists()) {
+        const existingData = clientDoc.data();
+        const currentUsers = existingData.users || [];
+        const mergedUsers = Array.from(new Set([...currentUsers, ...authorizedEmails]));
+        
+        await updateDoc(doc(db, 'clients', MASTER_CLIENT_ID), {
+          users: mergedUsers,
+          updatedAt: new Date().toISOString()
+        });
+        console.log("Updated MASTER client users list");
+      } else {
+        // Create the master client
+        await setDoc(doc(db, 'clients', MASTER_CLIENT_ID), {
+          clientId: MASTER_CLIENT_ID,
+          maxUsers: 50,
+          users: authorizedEmails,
+          ownerEmail: MASTER_ADMIN,
+          name: 'LeadPilot Master Portal',
+          defaultAgent: 'admin',
+          createdAt: new Date().toISOString()
+        });
+        console.log("Created MASTER client portal");
+      }
+      
+      alert('Initialization successful! Restarting...');
       window.location.reload();
     } catch (e: any) {
       console.error("Initialization error:", e);
-      handleFirestoreError(e, OperationType.CREATE, path);
+      alert('Error: ' + (e.message || 'Check Firestore rules or internet connection.'));
     } finally {
       setInitializing(false);
     }
@@ -103,7 +134,7 @@ function AccessDenied({ email }: { email: string }) {
         <div className="space-y-2">
           <h1 className="text-2xl font-bold text-gray-900">Access Denied</h1>
           <p className="text-gray-500 text-sm">
-            The email <span className="font-bold text-gray-900">{email}</span> is not authorized to access this CRM.
+            Authenticated as: <span className="font-bold text-gray-900">{email}</span>
           </p>
         </div>
 
@@ -118,25 +149,59 @@ function AccessDenied({ email }: { email: string }) {
           </div>
         )}
         
-        {email.toLowerCase() === 'leadpilot25@gmail.com' && (
-          <div className="space-y-3">
-             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Administrator Recovery</p>
+        {USERS.some(u => u.email.toLowerCase() === email.toLowerCase()) ? (
+          <div className="space-y-4">
+             <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-left">
+               <div className="flex justify-between items-center mb-2">
+                 <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Authorized Team Member</p>
+                 <span className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">MATCH</span>
+               </div>
+               <p className="text-[10px] text-emerald-600 font-bold leading-relaxed">
+                 You are recognized as an authorized team member in the system code. 
+                 If you cannot enter, the database needs to be initialized for your team.
+               </p>
+             </div>
+             
              <button 
               onClick={handleInitialize}
               disabled={initializing}
               className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
             >
-              {initializing ? <Loader2 className="animate-spin" /> : 'Initialize My CRM Account'}
+              {initializing ? <Loader2 className="animate-spin" size={20} /> : 'Initialize / Sync Master Team Access'}
             </button>
+            <p className="text-[9px] text-gray-400 font-medium">This will grant database permissions to all team emails listed in constants.ts</p>
+          </div>
+        ) : (
+          <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-left">
+             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Notice</p>
+             <p className="text-[10px] text-gray-400 font-bold leading-relaxed">
+               This account is not in the hardcoded USERS list. Contact your Master Admin (leadpilot25@gmail.com) to add you.
+             </p>
           </div>
         )}
 
-        <button 
-          onClick={() => logout()}
-          className="w-full py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold text-sm hover:bg-gray-200 transition-colors"
-        >
-          Logout & Try Another Email
-        </button>
+        <div className="pt-4 space-y-3">
+          <button 
+            onClick={() => logout()}
+            className="w-full py-3 bg-gray-100 text-gray-600 rounded-2xl font-bold text-xs hover:bg-gray-200 transition-colors"
+          >
+            Logout & Try Another Email
+          </button>
+          
+          <button 
+            onClick={() => setShowDiagnostic(!showDiagnostic)}
+            className="text-[10px] text-slate-400 font-bold uppercase tracking-widest hover:text-emerald-500"
+          >
+            {showDiagnostic ? 'Hide' : 'Show'} Database Config
+          </button>
+          
+          {showDiagnostic && (
+            <div className="p-3 bg-slate-900 rounded-xl text-left overflow-hidden">
+               <p className="text-[8px] font-mono text-emerald-400 mb-1 tracking-tighter">PROJECT: {import.meta.env.VITE_FIREBASE_PROJECT_ID || 'loading...'}</p>
+               <p className="text-[8px] font-mono text-emerald-400 tracking-tighter uppercase whitespace-nowrap overflow-hidden text-ellipsis">USER: {email}</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -173,6 +238,7 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
   const [appTypeFilter, setAppTypeFilter] = useState<AppointmentType | null>(null);
   const [isAddMode, setIsAddMode] = useState(false);
   const [selectedLeadForUpdate, setSelectedLeadForUpdate] = useState<Lead | null>(null);
+  const [initialUpdateType, setInitialUpdateType] = useState<AppointmentType | null>(null);
   const [selectedLeadForDone, setSelectedLeadForDone] = useState<Lead | null>(null);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -297,6 +363,19 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
           return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
         });
         break;
+      case 'Site Visits':
+        const siteVisitLeadIds = new Set(
+          (appointments || [])
+            .filter(a => a && a.type === AppointmentType.SITE_VISIT)
+            .map(a => a.leadId)
+        );
+        result = result.filter(l => l && (siteVisitLeadIds.has(l.id) || l.notes?.toLowerCase().includes('site visit') || l.callOutcome === CallOutcome.SITE_VISIT));
+        result.sort((a, b) => {
+          const dateA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+          const dateB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+          return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+        });
+        break;
       case 'All':
         result.sort((a, b) => {
           if (!a || !b) return 0;
@@ -321,7 +400,7 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
     
     // Dynamic counts for activity summary
     const activityCounts: Record<AppointmentType, number> = {
-      [AppointmentType.CALL]: todayAcrossAccess.filter(a => a && a.type === AppointmentType.CALL).length,
+      [AppointmentType.CALL_BACK]: todayAcrossAccess.filter(a => a && a.type === AppointmentType.CALL_BACK).length,
       [AppointmentType.SITE_VISIT]: todayAcrossAccess.filter(a => a && a.type === AppointmentType.SITE_VISIT).length,
       [AppointmentType.MEETING]: todayAcrossAccess.filter(a => a && a.type === AppointmentType.MEETING).length,
       [AppointmentType.FOLLOW_UP]: todayAcrossAccess.filter(a => a && a.type === AppointmentType.FOLLOW_UP).length,
@@ -688,7 +767,13 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
                       counts={stats.activityCounts} 
                       activeFilter={appTypeFilter}
                       onFilterChange={(type) => {
-                        setAppTypeFilter(type);
+                        if (type === AppointmentType.SITE_VISIT) {
+                          setActiveTab('Site Visits');
+                          setAppTypeFilter(null);
+                        } else {
+                          setAppTypeFilter(type);
+                        }
+                        
                         if (type) {
                           window.scrollTo({ top: 400, behavior: 'smooth' });
                         }
@@ -748,7 +833,7 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
                         appTypeFilter === AppointmentType.SITE_VISIT ? "bg-blue-50 text-blue-600 border-blue-100" :
                         appTypeFilter === AppointmentType.MEETING ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
                         appTypeFilter === AppointmentType.FOLLOW_UP ? "bg-slate-50 text-slate-600 border-slate-100" :
-                        appTypeFilter === AppointmentType.CALL ? "bg-orange-50 text-orange-600 border-orange-100" :
+                        appTypeFilter === AppointmentType.CALL_BACK ? "bg-orange-50 text-orange-600 border-orange-100" :
                         activeTab === 'Today' || activeTab === 'Dashboard' ? "bg-slate-50 text-slate-600 border-slate-100" : 
                         activeTab === 'Overdue' ? "bg-rose-50 text-rose-600 border-rose-100" : 
                         "bg-blue-50 text-blue-600 border-blue-100"
@@ -758,7 +843,7 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
                           appTypeFilter === AppointmentType.SITE_VISIT ? "bg-blue-500 animate-pulse" :
                           appTypeFilter === AppointmentType.MEETING ? "bg-emerald-500 animate-pulse" :
                           appTypeFilter === AppointmentType.FOLLOW_UP ? "bg-slate-500 animate-pulse" :
-                          appTypeFilter === AppointmentType.CALL ? "bg-orange-500 animate-pulse" :
+                          appTypeFilter === AppointmentType.CALL_BACK ? "bg-orange-500 animate-pulse" :
                           activeTab === 'Today' || activeTab === 'Dashboard' ? "bg-slate-400 animate-pulse" : 
                           activeTab === 'Overdue' ? "bg-rose-500 animate-pulse" : "bg-blue-500 animate-pulse"
                         )} />
@@ -766,7 +851,7 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
                           appTypeFilter === AppointmentType.SITE_VISIT ? 'Site Visit' :
                           appTypeFilter === AppointmentType.MEETING ? 'Meeting' :
                           appTypeFilter === AppointmentType.FOLLOW_UP ? 'Follow-up' :
-                          appTypeFilter === AppointmentType.CALL ? 'Call Back' :
+                          appTypeFilter === AppointmentType.CALL_BACK ? 'Call Back' :
                           activeTab === 'Dashboard' ? 'HOME' : 
                           activeTab
                         } Records
@@ -909,7 +994,10 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
                       <LeadCard 
                         key={lead.id}
                         lead={lead} 
-                        onUpdateAfterCall={(l) => setSelectedLeadForUpdate(l)}
+                        onUpdateAfterCall={(l, type) => {
+                          setSelectedLeadForUpdate(l);
+                          setInitialUpdateType(type || null);
+                        }}
                         onMarkDone={(l) => setSelectedLeadForDone(l)}
                         onDelete={() => deleteLead(lead.id)}
                         onReassign={(l, agentId) => {
@@ -954,10 +1042,14 @@ function Dashboard({ user, clientData, leads, appointments, tasks }: {
         <UpdateCallModal 
           isOpen={!!selectedLeadForUpdate} 
           lead={selectedLeadForUpdate} 
-          onClose={() => setSelectedLeadForUpdate(null)} 
+          onClose={() => {
+            setSelectedLeadForUpdate(null);
+            setInitialUpdateType(null);
+          }} 
           onUpdate={updateLeadFollowUp} 
           onSchedule={handleScheduleAppointment}
           teamMembers={clientData?.users || []}
+          initialType={initialUpdateType}
         />
         <MarkDoneModal isOpen={!!selectedLeadForDone} lead={selectedLeadForDone} onClose={() => setSelectedLeadForDone(null)} onConfirm={markLeadDone} />
         <ReassignModal 
