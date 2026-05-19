@@ -130,7 +130,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ appointments }) => {
                       className={cn(
                         "w-1 h-1 rounded-full",
                         isSelected ? "bg-white" : 
-                        app.type === AppointmentType.CALL ? "bg-blue-500" :
+                        app.type === AppointmentType.CALL_BACK ? "bg-blue-500" :
                         app.type === AppointmentType.SITE_VISIT ? "bg-emerald-500" :
                         (app.date && isPast(parseISO(app.date))) ? "bg-rose-500" : "bg-blue-500"
                       )} 
@@ -172,18 +172,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ appointments }) => {
                 key={app.id}
                 className={cn(
                   "p-5 rounded-[2rem] border-2 bg-white flex items-center gap-4 group transition-all hover:shadow-lg active:scale-[0.98]",
-                  app.type === AppointmentType.CALL ? "border-blue-50" :
+                  app.type === AppointmentType.CALL_BACK ? "border-blue-50" :
                   app.type === AppointmentType.SITE_VISIT ? "border-emerald-50" :
                   "border-slate-50"
                 )}
               >
                 <div className={cn(
                   "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0",
-                  app.type === AppointmentType.CALL ? "bg-blue-50 text-blue-600" :
+                  app.type === AppointmentType.CALL_BACK ? "bg-blue-50 text-blue-600" :
                   app.type === AppointmentType.SITE_VISIT ? "bg-emerald-50 text-emerald-600" :
                   "bg-slate-50 text-slate-600"
                 )}>
-                  {app.type === AppointmentType.CALL && <Phone size={20} strokeWidth={2.5} />}
+                  {app.type === AppointmentType.CALL_BACK && <Phone size={20} strokeWidth={2.5} />}
                   {app.type === AppointmentType.SITE_VISIT && <MapPin size={20} strokeWidth={2.5} />}
                   {app.type === AppointmentType.MEETING && <Video size={20} strokeWidth={2.5} />}
                   {app.type === AppointmentType.FOLLOW_UP && <CalendarIcon size={20} strokeWidth={2.5} />}
@@ -193,7 +193,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ appointments }) => {
                   <div className="flex items-center gap-2 mb-1">
                     <span className={cn(
                       "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg",
-                      app.type === AppointmentType.CALL ? "bg-blue-100 text-blue-700" :
+                      app.type === AppointmentType.CALL_BACK ? "bg-blue-100 text-blue-700" :
                       app.type === AppointmentType.SITE_VISIT ? "bg-emerald-100 text-emerald-700" :
                       "bg-slate-100 text-slate-700"
                     )}>
