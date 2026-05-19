@@ -10,7 +10,7 @@ export enum DoneReason {
 }
 
 export enum AppointmentType {
-  CALL = 'Call',
+  CALL_BACK = 'Call Back',
   SITE_VISIT = 'Site Visit',
   MEETING = 'Meeting',
   FOLLOW_UP = 'Follow-up'
@@ -52,9 +52,11 @@ export interface Task {
 export enum CallOutcome {
   CONNECTED = 'Connected',
   BUSY = 'Busy',
-  NOT_ANSWERED = 'Not Answered',
-  WRONG_NUMBER = 'Wrong Number',
-  FOLLOW_UP_LATER = 'Follow up Later'
+  NOT_ANSWERED = 'No Answer',
+  CALL_BACK = 'Call Back',
+  SITE_VISIT = 'Site Visit',
+  MEETING = 'Meeting',
+  WRONG_NUMBER = 'Wrong #'
 }
 
 export interface Lead {
@@ -88,4 +90,4 @@ export interface User {
   role: 'admin' | 'agent';
 }
 
-export type FilterTab = 'Dashboard' | 'All' | 'Today' | 'Overdue' | 'Upcoming' | 'Done' | 'Calendar' | 'Tasks' | 'Stats' | 'Settings';
+export type FilterTab = 'Dashboard' | 'All' | 'Today' | 'Overdue' | 'Upcoming' | 'Done' | 'Site Visits' | 'Calendar' | 'Tasks' | 'Stats' | 'Settings';
