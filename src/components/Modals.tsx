@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Loader2, Award, UserPlus, PhoneCall, Calendar, MessageSquare, ClipboardList } from 'lucide-react';
+import { X, Loader2, Award, UserPlus, PhoneCall, Calendar, MessageSquare, ClipboardList, MapPin, Video } from 'lucide-react';
 import { Lead, LeadStatus, DoneReason, AppointmentType, CallOutcome } from '../types';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
@@ -11,9 +11,10 @@ interface UpdateCallModalProps {
   onUpdate: (leadId: string, updates: Partial<Lead>) => Promise<void>;
   onSchedule?: (data: any) => Promise<void>;
   teamMembers: string[];
+  initialType?: AppointmentType | null;
 }
 
-export function UpdateCallModal({ lead, isOpen, onClose, onUpdate, onSchedule, teamMembers }: UpdateCallModalProps) {
+export function UpdateCallModal({ lead, isOpen, onClose, onUpdate, onSchedule, teamMembers, initialType }: UpdateCallModalProps) {
   const [loading, setLoading] = useState(false);
   const [createApp, setCreateApp] = useState(false);
   const [formData, setFormData] = useState({
@@ -23,7 +24,7 @@ export function UpdateCallModal({ lead, isOpen, onClose, onUpdate, onSchedule, t
     location: '',
     propertyType: '',
     appTime: '10:00',
-    appType: AppointmentType.FOLLOW_UP as string,
+    appType: AppointmentType.CALL_BACK as string,
     callOutcome: '' as string
   });
 
@@ -31,17 +32,22 @@ export function UpdateCallModal({ lead, isOpen, onClose, onUpdate, onSchedule, t
   React.useEffect(() => {
     if (lead && isOpen) {
       document.body.style.overflow = 'hidden';
+      
+      const defaultAppType = initialType || AppointmentType.CALL_BACK;
+      
       setFormData({
         followUpDate: lead.followUpDate ? format(new Date(lead.followUpDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
         notes: lead.notes || '',
         budget: lead.budget || '',
         location: lead.location || '',
         propertyType: lead.property || '',
-        appTime: '10:00',
-        appType: AppointmentType.FOLLOW_UP,
+        appTime: format(new Date(), 'HH:mm'),
+        appType: defaultAppType,
         callOutcome: (lead.callOutcome as string) || ''
       });
-      setCreateApp(false);
+      
+      // Auto-toggle schedule if we came from a specific link click
+      setCreateApp(!!initialType);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -84,44 +90,129 @@ export function UpdateCallModal({ lead, isOpen, onClose, onUpdate, onSchedule, t
     onClose();
   };
 
-  const outcomes = Object.values(CallOutcome);
+  const outcomes = [
+    CallOutcome.SITE_VISIT,
+    CallOutcome.MEETING,
+    CallOutcome.CALL_BACK
+  ];
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-full duration-500 max-h-[92vh] flex flex-col">
+      <div className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-full duration-500 max-h-[92vh] flex flex-col focus-within:ring-0">
         {/* Header */}
         <div className="p-6 border-b flex justify-between items-center bg-white shrink-0">
-          <h3 className="font-bold text-slate-800 text-lg">Update After Call</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full text-slate-400 flex items-center justify-center hover:bg-slate-50 transition-all">
+          <div>
+            <h3 className="font-black text-slate-800 text-lg tracking-tight uppercase italic">{lead.firstName || lead.name}</h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Status Update</p>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 rounded-2xl text-slate-400 flex items-center justify-center hover:bg-slate-50 transition-all border border-slate-100 shadow-sm">
             <X size={20} />
           </button>
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto no-scrollbar pb-10">
-          {/* Next Follow-up */}
+          {/* Call Outcome */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Next Follow-up *</label>
-            <input 
-              type="date" 
-              required
-              value={formData.followUpDate}
-              onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
-              className="w-full px-4 py-4 rounded-2xl border-2 border-slate-50 bg-slate-50 font-bold text-sm focus:outline-none focus:border-emerald-500 transition-all"
-            />
+            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Select Outcome</label>
+            <div className="grid grid-cols-2 gap-2">
+              {outcomes.map(outcome => {
+                const isSelected = formData.callOutcome === outcome;
+                const isSiteVisit = outcome === CallOutcome.SITE_VISIT;
+                const isMeeting = outcome === CallOutcome.MEETING;
+                const isCallBack = outcome === CallOutcome.CALL_BACK;
+                
+                return (
+                  <button
+                    key={outcome}
+                    type="button"
+                    onClick={() => {
+                      setFormData({ 
+                        ...formData, 
+                        callOutcome: outcome, 
+                        appType: isSiteVisit ? AppointmentType.SITE_VISIT : isMeeting ? AppointmentType.MEETING : AppointmentType.CALL_BACK 
+                      });
+                      if (isSiteVisit || isMeeting || isCallBack) setCreateApp(true);
+                    }}
+                    className={cn(
+                      "px-3 py-3 rounded-2xl border-2 text-[10px] font-black uppercase tracking-widest transition-all text-center",
+                      isSelected 
+                        ? (isSiteVisit ? "bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-100" :
+                           isMeeting ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-100" :
+                           "bg-slate-900 border-slate-900 text-white shadow-lg")
+                        : "bg-white border-slate-50 text-slate-500 hover:border-slate-100"
+                    )}
+                  >
+                    {outcome}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          {/* Appointment Toggle */}
+          {(formData.callOutcome === CallOutcome.SITE_VISIT || formData.callOutcome === CallOutcome.MEETING || formData.callOutcome === CallOutcome.CALL_BACK) && (
+            <div className={cn(
+              "p-4 rounded-3xl border transition-all duration-500 animate-in zoom-in-95",
+              formData.callOutcome === CallOutcome.SITE_VISIT ? "bg-blue-50 border-blue-100" :
+              formData.callOutcome === CallOutcome.MEETING ? "bg-emerald-50 border-emerald-100" :
+              "bg-slate-50 border-slate-100"
+            )}>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className={cn(
+                    "text-[10px] font-black uppercase tracking-widest mb-0.5",
+                    formData.callOutcome === CallOutcome.SITE_VISIT ? "text-blue-800" :
+                    formData.callOutcome === CallOutcome.MEETING ? "text-emerald-800" :
+                    "text-slate-800"
+                  )}>Schedule Final Step</p>
+                  <p className="text-[9px] text-slate-400 font-bold">This will add it to your calendar</p>
+                </div>
+                <div className="flex items-center gap-2 bg-white/50 p-1.5 rounded-xl border border-white/50">
+                   <div className="p-1 rounded-lg bg-white shadow-sm">
+                      {formData.callOutcome === CallOutcome.SITE_VISIT ? <MapPin className="text-blue-500" size={12} /> :
+                       formData.callOutcome === CallOutcome.MEETING ? <Video className="text-emerald-500" size={12} /> :
+                       <PhoneCall className="text-slate-500" size={12} />}
+                   </div>
+                   <span className="text-[9px] font-black uppercase text-slate-600 mr-2">{formData.appType}</span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Date</label>
+                  <input 
+                    type="date" 
+                    value={formData.followUpDate}
+                    onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-transparent bg-white font-bold text-xs focus:outline-none focus:border-blue-500 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Time</label>
+                  <input 
+                    type="time" 
+                    value={formData.appTime}
+                    onChange={(e) => setFormData({ ...formData, appTime: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-transparent bg-white font-bold text-xs focus:outline-none focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Call Notes */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Call Notes</label>
+            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Summary / Note</label>
             <textarea 
-              rows={4}
+              rows={3}
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="What did the client say?"
-              className="w-full p-4 rounded-2xl border-2 border-slate-50 bg-slate-50 font-bold text-sm focus:outline-none focus:border-emerald-500 transition-all resize-none placeholder:text-slate-300"
+              placeholder="Enter brief details..."
+              className="w-full p-4 rounded-2xl border-2 border-slate-50 bg-slate-50 font-bold text-sm focus:outline-none focus:border-emerald-500 transition-all resize-none placeholder:text-slate-200"
             />
           </div>
 
+          {/* Lead Details */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Budget</label>
