@@ -28,7 +28,7 @@ import { CompactSchedule } from './components/CompactSchedule';
 import { ReminderSystem } from './components/ReminderSystem';
 
 // Helper for Google Sheets
-const GOOGLE_SHEETS_SCRIPT_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_URL || 'https://script.google.com/macros/s/AKfycbxKrkCC9GQ0D7FOkZfJTasJmRmr-44cOUjjlUPIXfloLvcKQaQ-6swQ9XzruceXNqSPJQ/exec';
+const GOOGLE_SHEETS_SCRIPT_URL = (import.meta as any).env.VITE_GOOGLE_SHEETS_URL || 'YOUR_APPS_SCRIPT_URL_HERE';
 
 const sendToGoogleSheets = async (lead: any) => {
   const url = GOOGLE_SHEETS_SCRIPT_URL;
@@ -71,6 +71,7 @@ function AccessDenied({ email }: { email: string }) {
   const { error: authError } = useAuth();
 
   const MASTER_ADMIN = 'leadpilot25@gmail.com';
+  const isInternalAdmin = email.toLowerCase() === MASTER_ADMIN || email.toLowerCase() === 'leadpilotclient@gmail.com';
 
   // Auto-init for authorized team members
   const handleInitialize = async () => {
@@ -78,9 +79,10 @@ function AccessDenied({ email }: { email: string }) {
     const emailLower = email.toLowerCase();
     
     try {
-      // We use a fixed client ID for the Master Team to ensure everyone stays together
-      const MASTER_CLIENT_ID = 'client_lp_master_v1';
-      const clientsRef = collection(db, 'clients');
+      // Use the client ID provided by the user in their screenshot context if possible, 
+      // or a default master ID for the main team.
+      const MASTER_CLIENT_ID = 'client_lp_master_v2';
+      const clientRef = doc(db, 'clients', MASTER_CLIENT_ID);
       
       const authorizedEmails = Array.from(new Set([
         MASTER_ADMIN,
@@ -88,38 +90,35 @@ function AccessDenied({ email }: { email: string }) {
         emailLower
       ]));
 
-      // Check if document exists first
-      const clientDoc = await getDoc(doc(db, 'clients', MASTER_CLIENT_ID));
+      // Check if document exists
+      const clientDoc = await getDoc(clientRef);
       
       if (clientDoc.exists()) {
         const existingData = clientDoc.data();
         const currentUsers = existingData.users || [];
         const mergedUsers = Array.from(new Set([...currentUsers, ...authorizedEmails]));
         
-        await updateDoc(doc(db, 'clients', MASTER_CLIENT_ID), {
+        await updateDoc(clientRef, {
           users: mergedUsers,
           updatedAt: new Date().toISOString()
         });
-        console.log("Updated MASTER client users list");
       } else {
-        // Create the master client
-        await setDoc(doc(db, 'clients', MASTER_CLIENT_ID), {
+        await setDoc(clientRef, {
           clientId: MASTER_CLIENT_ID,
           maxUsers: 50,
           users: authorizedEmails,
           ownerEmail: MASTER_ADMIN,
-          name: 'LeadPilot Master Portal',
+          name: 'LeadPilot Portal',
           defaultAgent: 'admin',
           createdAt: new Date().toISOString()
         });
-        console.log("Created MASTER client portal");
       }
       
-      alert('Initialization successful! Restarting...');
+      alert('Access sync successful! Reloading...');
       window.location.reload();
     } catch (e: any) {
       console.error("Initialization error:", e);
-      alert('Error: ' + (e.message || 'Check Firestore rules or internet connection.'));
+      alert('Initialization Error: ' + (e.message || 'Please check Firestore rules.'));
     } finally {
       setInitializing(false);
     }
@@ -128,77 +127,77 @@ function AccessDenied({ email }: { email: string }) {
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-6">
       <div className="bg-white w-full max-w-md p-8 rounded-3xl shadow-xl text-center space-y-6 animate-in fade-in zoom-in duration-300">
-        <div className="flex justify-center text-red-500">
+        <div className="flex justify-center text-rose-500">
           <ShieldAlert size={64} />
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-gray-900">Access Denied</h1>
-          <p className="text-gray-500 text-sm">
-            Authenticated as: <span className="font-bold text-gray-900">{email}</span>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight italic">ACCESS PENDING</h1>
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">
+            Logged in as: <span className="text-slate-900">{email}</span>
           </p>
         </div>
 
         {authError && (
-          <div className="p-4 bg-red-50 rounded-2xl border border-red-100 text-left">
-            <p className="text-[10px] font-bold text-red-800 uppercase tracking-widest mb-1 flex items-center gap-1">
+          <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100 text-left">
+            <p className="text-[10px] font-black text-rose-800 uppercase tracking-widest mb-1 flex items-center gap-1">
               <AlertCircle size={12} /> System Diagnostic
             </p>
-            <pre className="text-[9px] text-red-600 font-mono whitespace-pre-wrap overflow-hidden">
+            <pre className="text-[9px] text-rose-600 font-mono whitespace-pre-wrap">
               {authError}
             </pre>
           </div>
         )}
         
-        {USERS.some(u => u.email.toLowerCase() === email.toLowerCase()) ? (
+        <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 text-left space-y-3">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Next Steps</p>
           <div className="space-y-4">
-             <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-left">
-               <div className="flex justify-between items-center mb-2">
-                 <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Authorized Team Member</p>
-                 <span className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">MATCH</span>
-               </div>
-               <p className="text-[10px] text-emerald-600 font-bold leading-relaxed">
-                 You are recognized as an authorized team member in the system code. 
-                 If you cannot enter, the database needs to be initialized for your team.
-               </p>
-             </div>
-             
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded-lg bg-white shadow-sm flex items-center justify-center shrink-0 text-[10px] font-black text-slate-400 border border-slate-100">1</div>
+              <p className="text-[11px] text-slate-600 font-bold leading-relaxed">
+                Contact your manager to add <span className="text-emerald-600 underline underline-offset-2">{email}</span> to the <span className="font-black text-slate-900">Firestore Clients</span> list.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded-lg bg-white shadow-sm flex items-center justify-center shrink-0 text-[10px] font-black text-slate-400 border border-slate-100">2</div>
+              <p className="text-[11px] text-slate-600 font-bold leading-relaxed">
+                Once added in Firebase Console, your access will be automatic. No deployment required.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {isInternalAdmin && (
+          <div className="pt-2 animate-in slide-in-from-bottom-2 duration-700">
              <button 
               onClick={handleInitialize}
               disabled={initializing}
-              className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
+              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 flex items-center justify-center gap-2 active:scale-95 transition-all"
             >
-              {initializing ? <Loader2 className="animate-spin" size={20} /> : 'Initialize / Sync Master Team Access'}
+              {initializing ? <Loader2 className="animate-spin" size={20} /> : 'Force Sync Master Access'}
             </button>
-            <p className="text-[9px] text-gray-400 font-medium">This will grant database permissions to all team emails listed in constants.ts</p>
-          </div>
-        ) : (
-          <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-left">
-             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Notice</p>
-             <p className="text-[10px] text-gray-400 font-bold leading-relaxed">
-               This account is not in the hardcoded USERS list. Contact your Master Admin (leadpilot25@gmail.com) to add you.
-             </p>
+            <p className="text-[9px] text-slate-400 font-bold mt-3 uppercase tracking-widest italic">Admin Debug Tool Only</p>
           </div>
         )}
 
         <div className="pt-4 space-y-3">
           <button 
             onClick={() => logout()}
-            className="w-full py-3 bg-gray-100 text-gray-600 rounded-2xl font-bold text-xs hover:bg-gray-200 transition-colors"
+            className="w-full py-3 bg-white text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-100 shadow-sm hover:bg-slate-50 transition-colors"
           >
-            Logout & Try Another Email
+            Logout & Try Another Account
           </button>
           
           <button 
             onClick={() => setShowDiagnostic(!showDiagnostic)}
-            className="text-[10px] text-slate-400 font-bold uppercase tracking-widest hover:text-emerald-500"
+            className="text-[9px] text-slate-300 font-black uppercase tracking-[0.2em] hover:text-emerald-500 transition-colors"
           >
-            {showDiagnostic ? 'Hide' : 'Show'} Database Config
+            {showDiagnostic ? 'Hide' : 'Show'} Firebase Context
           </button>
           
           {showDiagnostic && (
-            <div className="p-3 bg-slate-900 rounded-xl text-left overflow-hidden">
-               <p className="text-[8px] font-mono text-emerald-400 mb-1 tracking-tighter">PROJECT: {import.meta.env.VITE_FIREBASE_PROJECT_ID || 'loading...'}</p>
-               <p className="text-[8px] font-mono text-emerald-400 tracking-tighter uppercase whitespace-nowrap overflow-hidden text-ellipsis">USER: {email}</p>
+            <div className="p-3 bg-slate-900 rounded-2xl text-left overflow-hidden border border-slate-800 shadow-inner">
+               <p className="text-[8px] font-mono text-emerald-400 mb-1 tracking-tighter uppercase opacity-60">Database Service Configured</p>
+               <p className="text-[8px] font-mono text-white tracking-tighter whitespace-nowrap overflow-hidden text-ellipsis">PROJECT: {import.meta.env.VITE_FIREBASE_PROJECT_ID || 'LP-PROD'}</p>
             </div>
           )}
         </div>
