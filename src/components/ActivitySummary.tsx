@@ -63,11 +63,11 @@ export function ActivitySummary({ counts, activeFilter, onFilterChange }: Activi
       count: counts[AppointmentType.FOLLOW_UP] || 0
     },
     { 
-      type: AppointmentType.CALL, 
+      type: AppointmentType.CALL_BACK, 
       label: 'CALL BACKS', 
       color: 'bg-orange-500 text-white', 
       icon: <Phone size={18} fill="currentColor" fillOpacity={0.2} />,
-      count: counts[AppointmentType.CALL] || 0
+      count: counts[AppointmentType.CALL_BACK] || 0
     }
   ];
 
